@@ -1,92 +1,223 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using POSSampleOWN.Data;
 using POSSampleOWN.DTOs;
 using POSSampleOWN.Models;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace POSSampleOWN.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class CategoriesController : ControllerBase
     {
-        private readonly POSDbContext dbContext; // Database context
+        private readonly POSDbContext _dbContext;
 
-        // Constructor
         public CategoriesController(POSDbContext dbContext)
         {
-            this.dbContext = dbContext;
+            _dbContext = dbContext;
         }
 
-        // GET: api/Categories
-        // Executing all categories with lists using DTOs
-        [HttpGet]
-        public IActionResult GetAll()
+        // GET: api/categories/getAllCategories
+        [HttpGet("getAllCategories")]
+        public async Task<IActionResult> GetAllCategories()
         {
-            // Get all categories
-            var categories = dbContext.Categories.ToList();
-
-            // Map Domain Models to DTOs
-            var categoryDto = new List<CategoryDTO>();
-            foreach (var category in categories)
-            {
-                categoryDto.Add(new CategoryDTO()
+            var categories = await _dbContext.Categories
+                .AsNoTracking()
+                .Select(c => new CategoryDTO
                 {
-                    Id = category.Id,
-                    Name = category.Name,
-                    Description = category.Description
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description
+                })
+                .ToListAsync();
+
+            return Ok(categories);
+        }
+
+        // GET: api/categories/getCategoryById/{id}
+        [HttpGet("getCategoryById/{id:int}")]
+        public async Task<IActionResult> GetCategoryById(int id)
+        {
+            var category = await _dbContext.Categories
+                .AsNoTracking()
+                .Include(c => c.Products)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category is null)
+            {
+                return NotFound(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Category not found."
                 });
             }
-            return Ok(categoryDto);
+
+            var dto = new CategoryDTO
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description
+            };
+
+            return Ok(new CategoryResponseDTO
+            {
+                IsSuccess = true,
+                Message = "Category retrieved successfully.",
+                Data = dto
+            });
         }
 
-        // GET: api/Categories/id
-        // Executing category by ID using DTO
-        [HttpGet]
-        [Route("{id:int}")]
-        public IActionResult GetById([FromRoute] int id)
+        // POST: api/categories/createCategory
+        [HttpPost("createCategory")]
+        public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDTO request)
         {
-            // Get category by ID
-            var category = dbContext.Categories.FirstOrDefault(c => c.Id == id);
-            if (category == null)
+            if (string.IsNullOrEmpty(request.Name))
             {
-                return NotFound();
+                return BadRequest(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Name is required."
+                });
             }
 
-            var categoryDto = new CategoryDTO()
+            //check duplicate category name
+            //not very sure that's why i commented out
+            //if (_dbContext.Categories.Any(c => c.Name == request.Name.Trim()))
+            //{
+            //    return BadRequest(new CategoryResponseDto
+            //    {
+            //        IsSuccess = false,
+            //        Message = "A category with the same name already exists."
+            //    });
+            //}
+
+            var newCategory = new Category
             {
-                Id = category.Id,
-                Name = category.Name,
-                Description = category.Description
+                Name = request.Name,
+                Description = request.Description,
+                CreatedAt = DateTime.UtcNow
             };
 
-            return Ok(categoryDto);
+            try
+            {
+          
+                await _dbContext.Categories.AddAsync(newCategory);
+                var result = await _dbContext.SaveChangesAsync();
+
+                var data = new CategoryDTO
+                {
+                    Id = newCategory.Id,
+                    Name = newCategory.Name,
+                    Description = newCategory.Description
+                };
+
+                return Ok(new CategoryResponseDTO
+                {
+                    IsSuccess = result > 0,
+                    Message = result > 0 ? "Category created successfully." : "Failed to create category.",
+                    Data = data
+                });
+            }
+            catch
+            {
+                return StatusCode(500, new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while creating the category."
+                });
+            }
         }
 
-        // POST: api/Categories
-        // Creating a new category using DTO
-        [HttpPost]
-        public IActionResult Create([FromBody] CreateCategoryDTO createCategoryDTO)
+        // PATCH: api/categories/updateCategory/{id}
+        [HttpPatch("updateCategory/{id:int}")]
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDTO request)
         {
-            // Map DTO to Domain Model
-            var category = new Category
+            var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category is null)
             {
-                Name = createCategoryDTO.Name,
-                Description = createCategoryDTO.Description
-            };
+                return NotFound(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Category not found."
+                });
+            }
 
-            // Save to database
-            dbContext.Categories.Add(category);
-            dbContext.SaveChanges();
+            if (!string.IsNullOrEmpty(request.Name))
+                category.Name = request.Name;
 
-            // Map Domain model back to DTO
-            var categoryDto = new CategoryDTO()
+            if (request.Description != null)
+                category.Description = request.Description;
+
+            category.UpdatedAt = DateTime.UtcNow;
+
+            try
             {
-                Id = category.Id,
-                Name = category.Name,
-                Description = category.Description
-            };
+                var updateResult = await _dbContext.SaveChangesAsync() > 0;
+                return Ok(new CategoryResponseDTO
+                {
+                    IsSuccess = updateResult,
+                    Message = updateResult ? "Category updated successfully." : "No changes were made."
+                });
+            }
+            catch
+            {
+                return StatusCode(500, new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Database error occurred while updating the category."
+                });
+            }
+        }
 
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, categoryDto);
+        // DELETE: api/categories/deleteCategory/{id}
+        [HttpDelete("deleteCategory/{id:int}")]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            var category = await _dbContext.Categories
+                .Include(c => c.Products)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (category is null)
+            {
+                return NotFound(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Category not found."
+                });
+            }
+
+            if (category.Products != null && category.Products.Any())
+            {
+                return BadRequest(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Category cannot be deleted because it contains products. Remove products first."
+                });
+            }
+
+            _dbContext.Categories.Remove(category);
+
+            try
+            {
+                var removed = await _dbContext.SaveChangesAsync() > 0;
+                return Ok(new CategoryResponseDTO
+                {
+                    IsSuccess = removed,
+                    Message = removed ? "Category deleted successfully." : "Failed to delete category."
+                });
+            }
+            catch
+            {
+                return StatusCode(500, new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred while deleting the category."
+                });
+            }
         }
     }
 }

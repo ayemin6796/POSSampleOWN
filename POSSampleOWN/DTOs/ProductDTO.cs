@@ -5,8 +5,8 @@ namespace POSSampleOWN.DTOs
     public class ProductDTO
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = null!;
+        public string? Description { get; set; }
         public decimal Price { get; set; }
         public int StockQuantity { get; set; }
         public int CategoryId { get; set; }
@@ -19,7 +19,7 @@ namespace POSSampleOWN.DTOs
         [MaxLength(150)]
         public string Name { get; set; }
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -34,7 +34,7 @@ namespace POSSampleOWN.DTOs
         [MaxLength(150)]
         public string Name { get; set; }
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
         [Required]
         public decimal Price { get; set; }
         [Required]
@@ -42,5 +42,13 @@ namespace POSSampleOWN.DTOs
         [Required]
         public int CategoryId { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    public class ProductResponseDTO
+    {
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = null!;
+        public ProductDTO? Data { get; set; }
+
     }
 }

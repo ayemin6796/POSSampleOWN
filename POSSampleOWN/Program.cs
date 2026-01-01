@@ -11,7 +11,7 @@ builder.Services.AddSwaggerGen();
 
 // Add DbContext service
 builder.Services.AddDbContext<POSSampleOWN.Data.POSDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("POSConnectionString")));
 
 // Add CORS Policy
 builder.Services.AddCors(options =>
