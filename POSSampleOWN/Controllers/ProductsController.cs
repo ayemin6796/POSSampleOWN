@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using POSSampleOWN.Data;
 using POSSampleOWN.DTOs;
@@ -163,7 +164,7 @@ namespace POSSampleOWN.Controllers
 
         // POST: api/products/createProduct
         [HttpPost("createProduct")]
-        public async Task<IActionResult> CreateProduct([FromBody] ProductDTO request)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDTO request)
         {
             if (string.IsNullOrEmpty(request.Name) || request.Price <= 0 || request.Price.Equals(null))
             {
@@ -174,21 +175,31 @@ namespace POSSampleOWN.Controllers
                 });
             }
 
+            var newProduct = new Product 
+            { 
+                Name = request.Name,
+                Description = request.Description,
+                Price = request.Price,
+                StockQuantity = request.StockQuantity,  
+                CategoryId = request.CategoryId,
+                IsActive = true, 
+                CreatedAt = DateTime.UtcNow
+            };
+
             try
             {
-                var newProduct = new Product
+              
+                await _dbContext.Products.AddAsync(newProduct);
+                var result = await _dbContext.SaveChangesAsync();
+
+                var data = new CreateProductDTO
                 {
-                    Id = request.Id,
                     Name = request.Name,
                     Description = request.Description,
                     Price = request.Price,
-                    CategoryId = request.CategoryId,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    StockQuantity = request.StockQuantity,
+                    CategoryId = request.CategoryId
                 };
-
-                await _dbContext.Products.AddAsync(newProduct);
-                var result = await _dbContext.SaveChangesAsync();
 
                 return Ok(new ProductResponseDTO
                 {
@@ -337,5 +348,10 @@ namespace POSSampleOWN.Controllers
                 Message = result ? "Product status updated successfully!" : "Failed to update product status."
             });
         }
+
+        //change product price, product's category and stock quantity left
+        //logging left
+
+
     }
 }

@@ -17,7 +17,7 @@ namespace POSSampleOWN.DTOs
     {
         [Required]
         [MaxLength(150)]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         [MaxLength(500)]
         public string? Description { get; set; }
         [Required]
@@ -32,7 +32,7 @@ namespace POSSampleOWN.DTOs
     {
         [Required]
         [MaxLength(150)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
         [MaxLength(500)]
         public string? Description { get; set; }
         [Required]

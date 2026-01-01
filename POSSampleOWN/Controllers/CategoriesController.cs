@@ -195,7 +195,7 @@ namespace POSSampleOWN.Controllers
                 return BadRequest(new CategoryResponseDTO
                 {
                     IsSuccess = false,
-                    Message = "Category cannot be deleted because it contains products. Remove products first."
+                    Message = "Category cannot be deleted because it contains products. Remove or products first."
                 });
             }
 
