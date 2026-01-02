@@ -38,7 +38,7 @@ namespace POSSampleOWN.Controllers
         }
 
         // GET: api/categories/getCategoryById/{id}
-        [HttpGet("getCategoryById/{id:int}")]
+        [HttpGet("getCategoryById/{id}")]
         public async Task<IActionResult> GetCategoryById(int id)
         {
             var category = await _dbContext.Categories
@@ -132,7 +132,7 @@ namespace POSSampleOWN.Controllers
         }
 
         // PATCH: api/categories/updateCategory/{id}
-        [HttpPatch("updateCategory/{id:int}")]
+        [HttpPatch("updateCategory/{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDTO request)
         {
             var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id);
@@ -174,50 +174,51 @@ namespace POSSampleOWN.Controllers
         }
 
         // DELETE: api/categories/deleteCategory/{id}
-        [HttpDelete("deleteCategory/{id:int}")]
-        public async Task<IActionResult> DeleteCategory(int id)
-        {
-            var category = await _dbContext.Categories
-                .Include(c => c.Products)
-                .FirstOrDefaultAsync(c => c.Id == id);
+        //[HttpDelete("deleteCategory/{id}")]
+        //public async Task<IActionResult> DeleteCategory(int id)
+        //{
+        //    var category = await _dbContext.Categories
+        //        .Include(c => c.Products)
+        //        .FirstOrDefaultAsync(c => c.Id == id);
 
-            if (category is null)
-            {
-                return NotFound(new CategoryResponseDTO
-                {
-                    IsSuccess = false,
-                    Message = "Category not found."
-                });
-            }
+        //    if (category is null)
+        //    {
+        //        return NotFound(new CategoryResponseDTO
+        //        {
+        //            IsSuccess = false,
+        //            Message = "Category not found."
+        //        });
+        //    }
 
-            if (category.Products != null && category.Products.Any())
-            {
-                return BadRequest(new CategoryResponseDTO
-                {
-                    IsSuccess = false,
-                    Message = "Category cannot be deleted because it contains products. Remove or products first."
-                });
-            }
+        //    if (category.Products != null && category.Products.Any())
+        //    {
+        //        return BadRequest(new CategoryResponseDTO
+        //        {
+        //            IsSuccess = false,
+        //            Message = "Category cannot be deleted because it contains products. Remove or products first."
+        //        });
+        //    }
 
-            _dbContext.Categories.Remove(category);
+        //    _dbContext.Categories.Remove(category);
 
-            try
-            {
-                var removed = await _dbContext.SaveChangesAsync() > 0;
-                return Ok(new CategoryResponseDTO
-                {
-                    IsSuccess = removed,
-                    Message = removed ? "Category deleted successfully." : "Failed to delete category."
-                });
-            }
-            catch
-            {
-                return StatusCode(500, new CategoryResponseDTO
-                {
-                    IsSuccess = false,
-                    Message = "An error occurred while deleting the category."
-                });
-            }
-        }
+
+        //    try
+        //    {
+        //        var removed = await _dbContext.SaveChangesAsync() > 0;
+        //        return Ok(new CategoryResponseDTO
+        //        {
+        //            IsSuccess = removed,
+        //            Message = removed ? "Category deleted successfully." : "Failed to delete category."
+        //        });
+        //    }
+        //    catch
+        //    {
+        //        return StatusCode(500, new CategoryResponseDTO
+        //        {
+        //            IsSuccess = false,
+        //            Message = "An error occurred while deleting the category."
+        //        });
+        //    }
+        //}
     }
 }

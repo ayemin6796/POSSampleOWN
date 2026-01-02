@@ -352,7 +352,6 @@ namespace POSSampleOWN.Controllers
             });
         }
 
-        //change product price, product's category and stock quantity left
         //logging left
 
 
