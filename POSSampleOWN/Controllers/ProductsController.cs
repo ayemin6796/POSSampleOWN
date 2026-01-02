@@ -106,12 +106,12 @@ namespace POSSampleOWN.Controllers
         //    return CreatedAtAction(nameof(GetById), new { id = product.Id }, productDto);
         //}
 
-        private IQueryable<Product> ProductQuery => _dbContext.Products
+        private IQueryable<Product> ActiveProductQuery => _dbContext.Products
             .AsNoTracking()
             .Where(product => product.IsActive == true);
 
-        // GET: api/products/getAllProducts
-        [HttpGet("getAllProducts")]
+        // GET: api/products/allProducts
+        [HttpGet("allProducts")]
         public async Task<IActionResult> GetAllProducts()
         {
             var lst = await _dbContext.Products.AsNoTracking()
@@ -129,11 +129,11 @@ namespace POSSampleOWN.Controllers
             return Ok(lst);
         }
 
-        // GET: api/products/getProductById/{id}
-        [HttpGet("getProductById/{id}")]
-        public async Task<IActionResult> GetProductById(int id)
+        // GET: api/products/availableProductById/{id}
+        [HttpGet("availableProductsById/{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var product = await ProductQuery.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await ActiveProductQuery.FirstOrDefaultAsync(p => p.Id == id);
 
             if (product is null)
             {
@@ -162,8 +162,29 @@ namespace POSSampleOWN.Controllers
             });
         }
 
+        // GET: api/products/getAvailableProducts
+        [HttpGet("availableProducts")]
+        public async Task<IActionResult> GetAvailableProducts()
+        {
+            var availableProducts = await ActiveProductQuery
+                .Where(p => p.IsActive && p.StockQuantity > 0)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    p.StockQuantity,
+                    p.CategoryId
+                })
+                .ToListAsync();
+
+            return Ok(availableProducts);
+        }
+
+
         // POST: api/products/createProduct
-        [HttpPost("createProduct")]
+        [HttpPost("productCreate")]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductDTO createRequest)
         {
             if (string.IsNullOrEmpty(createRequest.Name) || 
@@ -191,7 +212,7 @@ namespace POSSampleOWN.Controllers
             try
             {
               
-                await _dbContext.Products.AddAsync(newProduct);
+                _dbContext.Products.Add(newProduct);
                 var result = await _dbContext.SaveChangesAsync();
 
                 var createdDto = new CreateProductDTO
@@ -220,7 +241,7 @@ namespace POSSampleOWN.Controllers
         }
 
         // PATCH: api/products/updateProduct/{id}
-        [HttpPatch("updateProduct/{id}")]
+        [HttpPatch("productUpdate/{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO updateRequest)
         {
             var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
@@ -276,7 +297,7 @@ namespace POSSampleOWN.Controllers
         }
 
         // DELETE: api/products/deleteProduct/{id}
-        [HttpDelete("deleteProduct/{id}")]
+        [HttpDelete("productSoftDelete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _dbContext.Products
@@ -304,55 +325,35 @@ namespace POSSampleOWN.Controllers
             });
         }
 
-        // GET: api/products/getAvailableProducts
-        [HttpGet("getAvailableProducts")]
-        public async Task<IActionResult> GetAvailableProducts()
-        {
-            var availableProducts = await ProductQuery
-                .Where(p => p.IsActive && p.StockQuantity > 0)
-                .Select(p => new
-                {
-                    p.Id,
-                    p.Name,
-                    p.Description,
-                    p.Price,
-                    p.StockQuantity,
-                    p.CategoryId
-                })
-                .ToListAsync();
-
-            return Ok(availableProducts);
-        }
-
+        
         // PATCH: api/products/setProductStatus/{id}
-        [HttpPatch("setProductStatus/{id}")]
-        public async Task<IActionResult> SetProductStatus(int id, [FromBody] ProductDTO request)
-        {
-            var product = await _dbContext.Products
-                .FirstOrDefaultAsync(p => p.Id == id && !p.IsActive);
+        //[HttpPatch("ProductStatus/{id}")]
+        //public async Task<IActionResult> SetProductStatus(int id, [FromBody] ProductDTO request)
+        //{
+        //    var product = await _dbContext.Products
+        //        .FirstOrDefaultAsync(p => p.Id == id && !p.IsActive);
 
-            if (product is null)
-            {
-                return NotFound(new ProductResponseDTO
-                {
-                    IsSuccess = false,
-                    Message = "Product not found."
-                });
-            }
+        //    if (product is null)
+        //    {
+        //        return NotFound(new ProductResponseDTO
+        //        {
+        //            IsSuccess = false,
+        //            Message = "Product not found."
+        //        });
+        //    }
 
-            product.IsActive = request.IsActive;
-            product.UpdatedAt = DateTime.UtcNow;
+        //    product.IsActive = request.IsActive;
+        //    product.UpdatedAt = DateTime.UtcNow;
 
-            var result = await _dbContext.SaveChangesAsync() > 0;
+        //    var result = await _dbContext.SaveChangesAsync() > 0;
 
-            return Ok(new ProductResponseDTO        
-            {
-                IsSuccess = result,
-                Message = result ? "Product status updated successfully!" : "Failed to update product status."
-            });
-        }
+        //    return Ok(new ProductResponseDTO        
+        //    {
+        //        IsSuccess = result,
+        //        Message = result ? "Product status updated successfully!" : "Failed to update product status."
+        //    });
+        //}
 
-        //logging left
 
 
     }
