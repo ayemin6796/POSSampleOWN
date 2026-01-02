@@ -114,7 +114,7 @@ namespace POSSampleOWN.Controllers
         [HttpGet("getAllProducts")]
         public async Task<IActionResult> GetAllProducts()
         {
-            var lst = await ProductQuery
+            var lst = await _dbContext.Products.AsNoTracking()
                 .Select(product => new ProductDTO
                 {
                     Id = product.Id,
@@ -164,24 +164,26 @@ namespace POSSampleOWN.Controllers
 
         // POST: api/products/createProduct
         [HttpPost("createProduct")]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDTO request)
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductDTO createRequest)
         {
-            if (string.IsNullOrEmpty(request.Name) || request.Price <= 0 || request.Price.Equals(null))
+            if (string.IsNullOrEmpty(createRequest.Name) || 
+                createRequest.Price <= 0 || 
+                createRequest.StockQuantity <= 0)
             {
                 return BadRequest(new ProductResponseDTO
                 {
                     IsSuccess = false,
-                    Message = "Name and Price are required."
+                    Message = "Name is required. Price and stock quantity must be positive."
                 });
             }
 
             var newProduct = new Product 
             { 
-                Name = request.Name,
-                Description = request.Description,
-                Price = request.Price,
-                StockQuantity = request.StockQuantity,  
-                CategoryId = request.CategoryId,
+                Name = createRequest.Name,
+                Description = createRequest.Description,
+                Price = createRequest.Price,
+                StockQuantity = createRequest.StockQuantity,  
+                CategoryId = createRequest.CategoryId,
                 IsActive = true, 
                 CreatedAt = DateTime.UtcNow
             };
@@ -192,13 +194,13 @@ namespace POSSampleOWN.Controllers
                 await _dbContext.Products.AddAsync(newProduct);
                 var result = await _dbContext.SaveChangesAsync();
 
-                var data = new CreateProductDTO
+                var createdDto = new CreateProductDTO
                 {
-                    Name = request.Name,
-                    Description = request.Description,
-                    Price = request.Price,
-                    StockQuantity = request.StockQuantity,
-                    CategoryId = request.CategoryId
+                    Name = createRequest.Name,
+                    Description = createRequest.Description,
+                    Price = createRequest.Price,
+                    StockQuantity = createRequest.StockQuantity,
+                    CategoryId = createRequest.CategoryId
                 };
 
                 return Ok(new ProductResponseDTO
@@ -219,7 +221,7 @@ namespace POSSampleOWN.Controllers
 
         // PATCH: api/products/updateProduct/{id}
         [HttpPatch("updateProduct/{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO request)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO updateRequest)
         {
             var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
 
@@ -232,22 +234,23 @@ namespace POSSampleOWN.Controllers
                 });
             }
 
-            if (!string.IsNullOrEmpty(request.Name))
-                product.Name = request.Name;
+            if (updateRequest.Name is not null)
+                product.Name = updateRequest.Name;
 
-            if (!string.IsNullOrEmpty(request.Description))
-                product.Description = request.Description;
+            if (updateRequest.Description is not null)
+                product.Description = updateRequest.Description;
 
-            if (request.Price > 0)
-                product.Price = request.Price;
+            if (updateRequest.Price > 0)
+                product.Price = updateRequest.Price;
 
-            if (request.StockQuantity >= 0)
-                product.StockQuantity = request.StockQuantity;
+            if (updateRequest.StockQuantity >= 0)
+                product.StockQuantity = updateRequest.StockQuantity;
 
-            if (request.CategoryId != 0)
-                product.CategoryId = request.CategoryId;
+            if (updateRequest.CategoryId != 0)
+                product.CategoryId = updateRequest.CategoryId;
 
-            product.IsActive = request.IsActive;
+            if (updateRequest.IsActive.HasValue)
+                product.IsActive = updateRequest.IsActive.Value;
 
             product.UpdatedAt = DateTime.UtcNow;
 
@@ -277,7 +280,7 @@ namespace POSSampleOWN.Controllers
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _dbContext.Products
-                .FirstOrDefaultAsync(p => p.Id == id && !p.IsActive);
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product is null)
             {

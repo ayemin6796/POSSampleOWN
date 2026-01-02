@@ -30,7 +30,7 @@ namespace POSSampleOWN.DTOs
 
     public class UpdateProductDTO
     {
-        [Required]
+        
         [MaxLength(150)]
         public string? Name { get; set; }
         [MaxLength(500)]
@@ -41,7 +41,7 @@ namespace POSSampleOWN.DTOs
         public int StockQuantity { get; set; }
         [Required]
         public int CategoryId { get; set; }
-        public bool IsActive { get; set; }
+        public bool? IsActive { get; set; }
     }
 
     public class ProductResponseDTO
