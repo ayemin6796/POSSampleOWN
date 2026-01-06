@@ -21,7 +21,7 @@ namespace POSSampleOWN.Controllers
         }
 
         // GET: api/categories/getAllCategories
-        [HttpGet("getAllCategories")]
+        [HttpGet("allCategories")]
         public async Task<IActionResult> GetAllCategories()
         {
             var categories = await _dbContext.Categories
@@ -37,11 +37,18 @@ namespace POSSampleOWN.Controllers
             return Ok(categories);
         }
 
-        // GET: api/categories/getCategoryById/{id}
-        [HttpGet("getCategoryById/{id}")]
+        // GET: api/categories/categoriesById/{id}
+        [HttpGet("categoriesById/{id}")]
         public async Task<IActionResult> GetCategoryById(int id)
         {
-            if ()
+            if (id <= 0)
+            {
+                return BadRequest(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Invalid category ID."
+                });
+            }
 
             var category = await _dbContext.Categories
                 .AsNoTracking()
@@ -72,8 +79,8 @@ namespace POSSampleOWN.Controllers
             });
         }
 
-        // POST: api/categories/createCategory
-        [HttpPost("createCategory")]
+        // POST: api/categories/categoryCreate
+        [HttpPost("categoryCreate")]
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDTO request)
         {
             if (string.IsNullOrEmpty(request.Name))
@@ -86,7 +93,7 @@ namespace POSSampleOWN.Controllers
             }
 
             //check duplicate category name
-            //not very sure that's why i commented out
+            //not very sure, that's why i commented out
             //if (_dbContext.Categories.Any(c => c.Name == request.Name.Trim()))
             //{
             //    return BadRequest(new CategoryResponseDto
@@ -137,7 +144,17 @@ namespace POSSampleOWN.Controllers
         [HttpPatch("updateCategory/{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDTO request)
         {
-            var category = await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            if (id <= 0)
+            {
+                return BadRequest(new CategoryResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Invalid category ID."
+                });
+            }
+
+            var category = await _dbContext.Categories
+                .FirstOrDefaultAsync(c => c.Id == id);
 
             if (category is null)
             {
