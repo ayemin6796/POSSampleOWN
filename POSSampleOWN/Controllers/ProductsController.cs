@@ -7,7 +7,7 @@ using POSSampleOWN.Models;
 
 namespace POSSampleOWN.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/products")]
     [ApiController]
     public class ProductsController : Controller
     {
@@ -133,6 +133,15 @@ namespace POSSampleOWN.Controllers
         [HttpGet("availableProductsById/{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest(new ProductResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Invalid product ID."
+                });
+            }
+
             var product = await ActiveProductQuery.FirstOrDefaultAsync(p => p.Id == id);
 
             if (product is null)
@@ -166,6 +175,8 @@ namespace POSSampleOWN.Controllers
         [HttpGet("availableProducts")]
         public async Task<IActionResult> GetAvailableProducts()
         {
+            
+
             var availableProducts = await ActiveProductQuery
                 .Where(p => p.IsActive && p.StockQuantity > 0)
                 .Select(p => new
@@ -241,9 +252,18 @@ namespace POSSampleOWN.Controllers
         }
 
         // PATCH: api/products/updateProduct/{id}
-        [HttpPatch("productUpdate/{id}")]
+        [HttpPatch("productsUpdate/{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO updateRequest)
         {
+            if (id <= 0)
+            {
+                return BadRequest(new ProductResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Invalid product ID."
+                });
+            }
+
             var product = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
 
             if (product is null)
@@ -300,6 +320,15 @@ namespace POSSampleOWN.Controllers
         [HttpDelete("productSoftDelete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
+            if (id <= 0)
+            {
+                return BadRequest(new ProductResponseDTO
+                {
+                    IsSuccess = false,
+                    Message = "Invalid product ID."
+                });
+            }
+
             var product = await _dbContext.Products
                 .FirstOrDefaultAsync(p => p.Id == id);
 

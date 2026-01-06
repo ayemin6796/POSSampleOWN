@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace POSSampleOWN.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/categories")]
     public class CategoriesController : ControllerBase
     {
         private readonly POSDbContext _dbContext;
@@ -41,6 +41,8 @@ namespace POSSampleOWN.Controllers
         [HttpGet("getCategoryById/{id}")]
         public async Task<IActionResult> GetCategoryById(int id)
         {
+            if ()
+
             var category = await _dbContext.Categories
                 .AsNoTracking()
                 .Include(c => c.Products)
